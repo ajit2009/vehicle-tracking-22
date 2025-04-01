@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vehicle Tracking Dashboard</title>
+<<<<<<< HEAD
+</head>
+<body>
+    <h1>Vehicle Tracking Dashboard</h1>
+    <p>Your backend is running successfully!</p>
+=======
+    <style>
+        #map { height: 90vh; width: 100%; }
+    </style>
+</head>
+<body>
+    <h1>Live Vehicle Tracking</h1>
+    <div id="map"></div>
+
+    <script>
+        function initMap() {
+            const map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 5,
+                center: { lat: 20.5937, lng: 78.9629 } 
+            });
+
+            fetch('/locations')
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(location => {
+                    const marker = new google.maps.Marker({
+                        position: { lat: parseFloat(location.latitude), lng: parseFloat(location.longitude) },
+                        map: map,
+                        title: `${location.name} (${location.mobile})`
+                    });
+                });
+            });
+        }
+    </script>
+    <script async src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap"></script>
+>>>>>>> ce93ed2f804946a27e39ffcdd8acc82a880c5ff7
+</body>
+</html>
