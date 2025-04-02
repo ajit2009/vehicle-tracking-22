@@ -1,4 +1,4 @@
-from flask import Flask, render_templates, request, jsonify
+from flask import Flask, render_template, request, jsonify
 
 import mysql.connector
 from db_config import get_connection
@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 
 @app.route('/', methods=['GET'])
 def index():
-    return render_templates('dashboard.html')
+    return render_template('dashboard.html')
 
 @app.route('/location', methods=['POST'])
 def location():
