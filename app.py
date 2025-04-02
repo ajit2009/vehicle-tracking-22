@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify
+from flask import Flask, render_templates, request, jsonify
+
 import mysql.connector
 from db_config import get_connection
 from datetime import datetime
