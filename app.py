@@ -1,73 +1,48 @@
 from flask import Flask, request, jsonify, render_template
 import mysql.connector
-from datetime import datetime
+from db_config import get_connection
 
 app = Flask(__name__)
 
-# Database configuration
-db_config = {
-    'host': 'sql7.freesqldatabase.com',       # Replace with your free hosting SQL server
-    'user': 'sql7770632',               # Replace with your database username
-    'password': 'rW4FZ1M34e',       # Replace with your database password
-    'database': 'sql7770632'  # Replace with your database name
-}
-
-def get_connection():
-    return mysql.connector.connect(**db_config)
-
-# Home route to render HTML dashboard
 @app.route('/')
 def index():
     return render_template('dashboard.html')
 
-# Endpoint to receive location data from the Android app
 @app.route('/location', methods=['POST'])
-def update_location():
+def location():
     data = request.json
-    driver_id = data['driver_id']
-    name = data['name']
-    mobile = data['mobile']
-    latitude = data['latitude']
-    longitude = data['longitude']
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
+    driver_id = data.get('driver_id')
+    driver_name = data.get('driver_name')
+    driver_mobile = data.get('driver_mobile')
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+    
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        query = "INSERT INTO driver_location (driver_id, name, mobile, latitude, longitude, timestamp) VALUES (%s, %s, %s, %s, %s, %s)"
-        cursor.execute(query, (driver_id, name, mobile, latitude, longitude, timestamp))
+        cursor.execute("""
+            INSERT INTO driver_location (driver_id, driver_name, driver_mobile, latitude, longitude)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (driver_id, driver_name, driver_mobile, latitude, longitude))
         conn.commit()
         cursor.close()
         conn.close()
-        return jsonify({'message': 'Location updated successfully!'}), 200
+        return jsonify({"message": "Location data saved successfully!"}), 200
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
-# Endpoint to retrieve all locations
 @app.route('/locations', methods=['GET'])
 def get_locations():
     try:
         conn = get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM driver_location")
-        rows = cursor.fetchall()
+        locations = cursor.fetchall()
         cursor.close()
         conn.close()
-
-        locations = []
-        for row in rows:
-            locations.append({
-                'driver_id': row[0],
-                'name': row[1],
-                'mobile': row[2],
-                'latitude': row[3],
-                'longitude': row[4],
-                'timestamp': row[5]
-            })
-        
         return jsonify(locations)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
-if __name__ == "__main__":
-    app.run(debug=True)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
