@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 
 @app.route('/', methods=['GET'])
 def index():
-    return "Vehicle Tracking Backend is running!"
+    return render_template('dashboard.html')
 
 @app.route('/location', methods=['POST'])
 def location():
