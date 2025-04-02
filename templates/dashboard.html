@@ -27,7 +27,7 @@
         }).addTo(map);
 
         // Fetch location data from the backend
-        fetch('https://vehicle-tracking-22.onrender.com/locations')
+        fetch('https://vehicle-tracking-22.onrender.com/location')
             .then(response => response.json())
             .then(data => {
                 var locations = data.locations;
