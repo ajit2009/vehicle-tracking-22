@@ -17,22 +17,40 @@
     <div id="map"></div>
 
     <script>
+        let map;
+        let markers = {};
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 20.5937, lng: 78.9629 }, // Center of India
+                zoom: 5
+            });
+
+            fetchAndDisplayLocations(); // Initial fetch
+            setInterval(fetchAndDisplayLocations, 5000); // Fetch data every 5 seconds
+        }
+
         async function fetchLocations() {
             const response = await fetch('/locations');
             const locations = await response.json();
             return locations;
         }
 
-        function initMap() {
-            const map = new google.maps.Map(document.getElementById('map'), {
-                center: { lat: 20.5937, lng: 78.9629 }, // Center of India
-                zoom: 5
-            });
-
+        function fetchAndDisplayLocations() {
             fetchLocations().then(locations => {
+                // Remove old markers
+                for (const markerKey in markers) {
+                    if (markers.hasOwnProperty(markerKey)) {
+                        markers[markerKey].setMap(null);
+                        delete markers[markerKey];
+                    }
+                }
+
                 locations.forEach(location => {
+                    const position = { lat: parseFloat(location.latitude), lng: parseFloat(location.longitude) };
+
                     const marker = new google.maps.Marker({
-                        position: { lat: parseFloat(location.latitude), lng: parseFloat(location.longitude) },
+                        position: position,
                         map: map,
                         title: `Driver: ${location.driver_name}\nMobile: ${location.driver_mobile}`
                     });
@@ -50,6 +68,8 @@
                     marker.addListener('click', () => {
                         infowindow.open(map, marker);
                     });
+
+                    markers[location.driver_id] = marker; // Store marker with driver ID as key
                 });
             });
         }
