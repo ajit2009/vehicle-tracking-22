@@ -49,5 +49,27 @@ def location():
         return jsonify({"error": "Failed to save location"}), 500
 
 
+@app.route('/locations', methods=['GET'])
+def locations():
+    try:
+        # Connect to the database
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Retrieve all locations from the table
+        cursor.execute("SELECT * FROM driver_location")
+        locations = cursor.fetchall()
+
+        # Close the connection
+        cursor.close()
+        conn.close()
+
+        return jsonify({"locations": locations}), 200
+
+    except Exception as e:
+        logging.error(f"Error: {e}")
+        return jsonify({"error": "Failed to retrieve locations"}), 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
