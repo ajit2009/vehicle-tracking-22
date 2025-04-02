@@ -1,75 +1,65 @@
 from flask import Flask, request, jsonify, render_template
 import mysql.connector
-from mysql.connector import Error
+from db_config import db_config
 
 app = Flask(__name__)
 
-# Database configuration
-db_config = {
-    'host': 'sql7.freesqldatabase.com',       # FreeSQLDatabase.com host
-    'user': 'sql7770632',                     # Your database username
-    'password': 'rW4FZ1M34e',                # Your database password
-    'database': 'sql7770632',                 # Your database name
-    'port': 3306
-}
+def get_connection():
+    return mysql.connector.connect(
+        host=db_config['host'],
+        user=db_config['user'],
+        password=db_config['password'],
+        database=db_config['database']
+    )
 
 @app.route('/')
 def index():
-    return render_template('dashboard.html')   # Ensure you have 'dashboard.html' in your templates folder
+    return render_template('dashboard.html')
 
 @app.route('/location', methods=['POST'])
-def save_location():
-    data = request.get_json()
-    driver_id = data.get('driver_id')
-    driver_name = data.get('driver_name')
-    driver_mobile = data.get('driver_mobile')
-    latitude = data.get('latitude')
-    longitude = data.get('longitude')
+def location():
+    data = request.json
+    driver_id = data['driver_id']
+    driver_name = data['driver_name']
+    driver_mobile = data['driver_mobile']
+    latitude = data['latitude']
+    longitude = data['longitude']
 
-    try:
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor()
+    connection = get_connection()
+    cursor = connection.cursor()
 
-        # Delete previous location for this driver to keep database light
-        cursor.execute("DELETE FROM driver_location WHERE driver_id = %s", (driver_id,))
-        
-        # Insert the new location
-        cursor.execute(
-            "INSERT INTO driver_location (driver_id, driver_name, driver_mobile, latitude, longitude) "
-            "VALUES (%s, %s, %s, %s, %s)",
-            (driver_id, driver_name, driver_mobile, latitude, longitude)
-        )
-        connection.commit()
+    # Insert or update the driver's latest location
+    cursor.execute("""
+        INSERT INTO driver_location (driver_id, driver_name, driver_mobile, latitude, longitude)
+        VALUES (%s, %s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE 
+        driver_name = VALUES(driver_name), 
+        driver_mobile = VALUES(driver_mobile), 
+        latitude = VALUES(latitude), 
+        longitude = VALUES(longitude);
+    """, (driver_id, driver_name, driver_mobile, latitude, longitude))
 
-        return jsonify({"message": "Location saved successfully!"}), 200
+    connection.commit()
+    cursor.close()
+    connection.close()
 
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
-
-    finally:
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
+    return jsonify({"message": "Location updated successfully"}), 200
 
 @app.route('/locations', methods=['GET'])
-def get_locations():
-    try:
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor(dictionary=True)
+def locations():
+    connection = get_connection()
+    cursor = connection.cursor(dictionary=True)
 
-        # Retrieve the latest location of each driver
-        cursor.execute("SELECT * FROM driver_location GROUP BY driver_id")
-        locations = cursor.fetchall()
+    # Retrieve the latest location for each driver
+    cursor.execute("""
+        SELECT * FROM driver_location;
+    """)
+    locations = cursor.fetchall()
 
-        return jsonify(locations), 200
+    cursor.close()
+    connection.close()
 
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
-
-    finally:
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
+    return jsonify(locations)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
