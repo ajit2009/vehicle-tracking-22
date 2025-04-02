@@ -6,10 +6,10 @@ app = Flask(__name__)
 
 # Database configuration
 db_config = {
-    'host': 'sql.freehost.com',       # Replace with your free hosting SQL server
-    'user': 'your_user',               # Replace with your database username
-    'password': 'your_password',       # Replace with your database password
-    'database': 'vehicle_tracking_db'  # Replace with your database name
+    'host': 'sql7.freesqldatabase.com',       # Replace with your free hosting SQL server
+    'user': 'sql7770632',               # Replace with your database username
+    'password': 'rW4FZ1M34e',       # Replace with your database password
+    'database': 'sql7770632'  # Replace with your database name
 }
 
 def get_connection():
