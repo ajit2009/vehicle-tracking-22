@@ -8,16 +8,16 @@ CORS(app)  # Allow all domains to access this Flask app
 # Database configuration
 def get_connection():
     return mysql.connector.connect(
-        host='sql7.freesqldatabase.com',       # Server address
-        user='sql7770632',                     # Your database username
-        password='rW4FZ1M34e',                # Your database password
-        database='sql7770632',                 # Your database name
-        port=3306                             # Default MySQL port
+        host='sql7.freesqldatabase.com',
+        user='sql7770632',
+        password='rW4FZ1M34e',
+        database='sql7770632',
+        port=3306
     )
 
 @app.route('/')
 def index():
-    return render_template('dashboard.html')  # Ensure 'dashboard.html' exists in the 'templates' folder
+    return render_template('dashboard.html')
 
 @app.route('/location', methods=['POST'])
 def location():
@@ -25,7 +25,7 @@ def location():
         return jsonify({"error": "Invalid Content-Type. Expected application/json"}), 415
 
     data = request.get_json()
-
+    
     if not data:
         return jsonify({"error": "Invalid JSON format or missing data"}), 400
 
@@ -35,6 +35,7 @@ def location():
         driver_mobile = data['driver_mobile']
         latitude = data['latitude']
         longitude = data['longitude']
+        timestamp = data['timestamp']  # Now accepting timestamp from the request
     except KeyError:
         return jsonify({"error": "Invalid JSON keys. Make sure all keys are present."}), 400
 
@@ -44,14 +45,15 @@ def location():
     try:
         # Insert or update the driver's latest location
         cursor.execute("""
-            INSERT INTO driver_location (driver_id, driver_name, driver_mobile, latitude, longitude)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO driver_location (driver_id, driver_name, driver_mobile, latitude, longitude, timestamp)
+            VALUES (%s, %s, %s, %s, %s, %s)
             ON DUPLICATE KEY UPDATE 
             driver_name = VALUES(driver_name), 
             driver_mobile = VALUES(driver_mobile), 
             latitude = VALUES(latitude), 
-            longitude = VALUES(longitude)
-        """, (driver_id, driver_name, driver_mobile, latitude, longitude))
+            longitude = VALUES(longitude),
+            timestamp = VALUES(timestamp)
+        """, (driver_id, driver_name, driver_mobile, latitude, longitude, timestamp))
 
         connection.commit()
     except mysql.connector.Error as err:
@@ -68,9 +70,8 @@ def locations():
     cursor = connection.cursor(dictionary=True)
 
     try:
-        # Retrieve the latest location for each driver using GROUP BY
         cursor.execute("""
-            SELECT driver_id, driver_name, driver_mobile, latitude, longitude
+            SELECT driver_id, driver_name, driver_mobile, latitude, longitude, timestamp
             FROM driver_location
             GROUP BY driver_id;
         """)
