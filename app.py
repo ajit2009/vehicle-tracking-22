@@ -1,97 +1,82 @@
-from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS
-import mysql.connector
+from flask import Flask, request, jsonify
+from db_config import get_connection
+import datetime
 
 app = Flask(__name__)
-CORS(app)
-
-def get_connection():
-    return mysql.connector.connect(
-        host='sql7.freesqldatabase.com',
-        user='sql7770632',
-        password='rW4FZ1M34e',
-        database='sql7770632',
-        port=3306
-    )
 
 @app.route('/')
 def index():
-    return render_template('dashboard.html')
+    return "Vehicle Tracking API is running."
 
 @app.route('/location', methods=['POST'])
 def location():
-    if request.content_type != 'application/json':
-        return jsonify({"error": "Invalid Content-Type. Expected application/json"}), 415
-
-    data = request.get_json()
-
-    if not data:
-        return jsonify({"error": "Invalid JSON format or missing data"}), 400
-
     try:
-        driver_id = data['driver_id']
-        driver_name = data['driver_name']
-        driver_mobile = data['driver_mobile']
-        latitude = data['latitude']
-        longitude = data['longitude']
-        timestamp = data['timestamp']
-    except KeyError:
-        return jsonify({"error": "Invalid JSON keys. Make sure all keys are present."}), 400
+        if request.is_json:
+            # Handle JSON data
+            data = request.json
+        else:
+            # Handle Form Data
+            data = request.form.to_dict()
 
-    connection = get_connection()
-    cursor = connection.cursor()
+        # Extracting data from the request
+        driver_id = data.get('driver_id')
+        name = data.get('name')
+        mobile = data.get('mobile')
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    try:
+        # Check if all required fields are present
+        if not all([driver_id, name, mobile, latitude, longitude]):
+            return jsonify({"error": "Missing data fields"}), 400
+
+        # Connect to the database
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        # Remove the previous entry for the same driver (to keep only the last location)
+        cursor.execute("DELETE FROM driver_location WHERE driver_id = %s", (driver_id,))
+
+        # Insert new location
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS driver_location (
-                driver_id VARCHAR(50) PRIMARY KEY,
-                driver_name VARCHAR(100),
-                driver_mobile VARCHAR(15),
-                latitude DOUBLE,
-                longitude DOUBLE,
-                timestamp DATETIME
-            )
-        """)
-
-        cursor.execute("""
-            INSERT INTO driver_location (driver_id, driver_name, driver_mobile, latitude, longitude, timestamp)
+            INSERT INTO driver_location (driver_id, name, mobile, latitude, longitude, timestamp)
             VALUES (%s, %s, %s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE 
-            driver_name = VALUES(driver_name), 
-            driver_mobile = VALUES(driver_mobile), 
-            latitude = VALUES(latitude), 
-            longitude = VALUES(longitude),
-            timestamp = VALUES(timestamp)
-        """, (driver_id, driver_name, driver_mobile, latitude, longitude, timestamp))
+        """, (driver_id, name, mobile, latitude, longitude, timestamp))
 
         connection.commit()
-    except mysql.connector.Error as err:
-        return jsonify({"error": str(err)}), 500
-    finally:
         cursor.close()
         connection.close()
 
-    return jsonify({"message": "Location updated successfully"}), 200
+        return jsonify({"message": "Location saved successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/locations', methods=['GET'])
 def locations():
-    connection = get_connection()
-    cursor = connection.cursor(dictionary=True)
-
     try:
+        # Connect to the database
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        # Retrieve only the last recorded location of each driver
         cursor.execute("""
-            SELECT driver_id, driver_name, driver_mobile, latitude, longitude, timestamp
+            SELECT DISTINCT ON (driver_id) driver_id, name, mobile, latitude, longitude, timestamp
             FROM driver_location
-            GROUP BY driver_id;
+            ORDER BY driver_id, timestamp DESC
         """)
-        locations = cursor.fetchall()
-    except mysql.connector.Error as err:
-        return jsonify({"error": str(err)}), 500
-    finally:
+
+        rows = cursor.fetchall()
         cursor.close()
         connection.close()
 
-    return jsonify(locations)
+        # Convert the results to a list of dictionaries
+        result = [{"driver_id": row[0], "name": row[1], "mobile": row[2], "latitude": row[3], "longitude": row[4], "timestamp": row[5]} for row in rows]
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
