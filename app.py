@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS  # Importing CORS for cross-origin requests handling
 import mysql.connector
 
 app = Flask(__name__)
+CORS(app)  # Allow all domains to access this Flask app
 
 # Database configuration
 def get_connection():
@@ -23,7 +25,10 @@ def location():
         return jsonify({"error": "Invalid Content-Type. Expected application/json"}), 415
 
     data = request.get_json()
-    
+
+    if not data:
+        return jsonify({"error": "Invalid JSON format or missing data"}), 400
+
     try:
         driver_id = data['driver_id']
         driver_name = data['driver_name']
@@ -31,7 +36,7 @@ def location():
         latitude = data['latitude']
         longitude = data['longitude']
     except KeyError:
-        return jsonify({"error": "Invalid JSON format"}), 400
+        return jsonify({"error": "Invalid JSON keys. Make sure all keys are present."}), 400
 
     connection = get_connection()
     cursor = connection.cursor()
@@ -45,7 +50,7 @@ def location():
             driver_name = VALUES(driver_name), 
             driver_mobile = VALUES(driver_mobile), 
             latitude = VALUES(latitude), 
-            longitude = VALUES(longitude);
+            longitude = VALUES(longitude)
         """, (driver_id, driver_name, driver_mobile, latitude, longitude))
 
         connection.commit()
