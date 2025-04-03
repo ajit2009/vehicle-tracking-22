@@ -68,8 +68,12 @@ def locations():
     cursor = connection.cursor(dictionary=True)
 
     try:
-        # Retrieve the latest location for each driver
-        cursor.execute("SELECT * FROM driver_location;")
+        # Retrieve the latest location for each driver using GROUP BY
+        cursor.execute("""
+            SELECT driver_id, driver_name, driver_mobile, latitude, longitude
+            FROM driver_location
+            GROUP BY driver_id;
+        """)
         locations = cursor.fetchall()
     except mysql.connector.Error as err:
         return jsonify({"error": str(err)}), 500
