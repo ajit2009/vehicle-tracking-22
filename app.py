@@ -1,11 +1,10 @@
 from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS  # Importing CORS for cross-origin requests handling
+from flask_cors import CORS
 import mysql.connector
 
 app = Flask(__name__)
-CORS(app)  # Allow all domains to access this Flask app
+CORS(app)
 
-# Database configuration
 def get_connection():
     return mysql.connector.connect(
         host='sql7.freesqldatabase.com',
@@ -25,7 +24,7 @@ def location():
         return jsonify({"error": "Invalid Content-Type. Expected application/json"}), 415
 
     data = request.get_json()
-    
+
     if not data:
         return jsonify({"error": "Invalid JSON format or missing data"}), 400
 
@@ -35,7 +34,7 @@ def location():
         driver_mobile = data['driver_mobile']
         latitude = data['latitude']
         longitude = data['longitude']
-        timestamp = data['timestamp']  # Now accepting timestamp from the request
+        timestamp = data['timestamp']
     except KeyError:
         return jsonify({"error": "Invalid JSON keys. Make sure all keys are present."}), 400
 
@@ -43,7 +42,17 @@ def location():
     cursor = connection.cursor()
 
     try:
-        # Insert or update the driver's latest location
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS driver_location (
+                driver_id VARCHAR(50) PRIMARY KEY,
+                driver_name VARCHAR(100),
+                driver_mobile VARCHAR(15),
+                latitude DOUBLE,
+                longitude DOUBLE,
+                timestamp DATETIME
+            )
+        """)
+
         cursor.execute("""
             INSERT INTO driver_location (driver_id, driver_name, driver_mobile, latitude, longitude, timestamp)
             VALUES (%s, %s, %s, %s, %s, %s)
