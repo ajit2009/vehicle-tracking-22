@@ -31,8 +31,8 @@ def location():
         logging.debug(f"Received data: {data}")
         
         driver_id = data.get('driver_id')
-        name = data.get('name')
-        mobile = data.get('mobile')
+        name = data.get('driver_name')
+        mobile = data.get('driver_mobile')
         latitude = data.get('latitude')
         longitude = data.get('longitude')
 
@@ -45,7 +45,7 @@ def location():
 
         # Upsert Query to update or insert the latest location
         cursor.execute("""
-            INSERT INTO driver_location (driver_id, name, mobile, latitude, longitude, timestamp)
+            INSERT INTO driver_location (driver_id, driver_name, driver_mobile, latitude, longitude, timestamp)
             VALUES (%s, %s, %s, %s, %s, NOW())
             ON DUPLICATE KEY UPDATE 
             name = VALUES(name), mobile = VALUES(mobile), latitude = VALUES(latitude), longitude = VALUES(longitude), timestamp = NOW();
