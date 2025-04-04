@@ -10,6 +10,7 @@
             width: 100%;
         }
     </style>
+    <!-- Replace YOUR_GOOGLE_MAPS_API_KEY with your actual key -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAmn_6x7FQeNYZC07VAZC2CXNxM5PoH-Fo"></script>
 </head>
 <body>
@@ -31,9 +32,14 @@
         }
 
         async function fetchLocations() {
-            const response = await fetch('/locations');
-            const locations = await response.json();
-            return locations;
+            try {
+                const response = await fetch('https://your-render-app-url.onrender.com/locations'); // Use your Render URL
+                const locations = await response.json();
+                return locations;
+            } catch (error) {
+                console.error("Error fetching locations:", error);
+                return [];
+            }
         }
 
         function fetchAndDisplayLocations() {
