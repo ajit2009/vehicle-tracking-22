@@ -45,7 +45,7 @@ def location():
         connection = get_connection()
         cursor = connection.cursor()
 
-        # Upsert Query to update or insert the latest location
+        # Insert or Update the latest location for the driver
         cursor.execute("""
             INSERT INTO driver_location (driver_id, driver_name, driver_mobile, latitude, longitude, timestamp)
             VALUES (%s, %s, %s, %s, %s, NOW())
