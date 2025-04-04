@@ -50,8 +50,11 @@ def location():
             INSERT INTO driver_location (driver_id, driver_name, driver_mobile, latitude, longitude, timestamp)
             VALUES (%s, %s, %s, %s, %s, NOW())
             ON DUPLICATE KEY UPDATE 
-            driver_name = VALUES(driver_name), driver_mobile = VALUES(driver_mobile), 
-            latitude = VALUES(latitude), longitude = VALUES(longitude), timestamp = NOW();
+            driver_name = VALUES(driver_name), 
+            driver_mobile = VALUES(driver_mobile), 
+            latitude = VALUES(latitude), 
+            longitude = VALUES(longitude), 
+            timestamp = NOW();
         """, (driver_id, driver_name, driver_mobile, latitude, longitude))
 
         connection.commit()
@@ -65,14 +68,19 @@ def location():
         logging.error(f"Error in /location endpoint: {e}")
         return jsonify({"error": str(e)}), 500
 
-# Route to retrieve all locations (GET Request)
+# Route to retrieve all latest locations (GET Request)
 @app.route('/locations', methods=['GET'])
 def locations():
     try:
         connection = get_connection()
         cursor = connection.cursor(dictionary=True)
         
-        cursor.execute("SELECT * FROM driver_location")
+        # Retrieve only the latest location for each driver
+        cursor.execute("""
+            SELECT driver_id, driver_name, driver_mobile, latitude, longitude, timestamp
+            FROM driver_location;
+        """)
+        
         locations = cursor.fetchall()
         
         cursor.close()
