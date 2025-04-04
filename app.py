@@ -3,7 +3,7 @@ import logging
 import mysql.connector
 from db_config import get_connection
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
 
 # Enable logging
 logging.basicConfig(level=logging.DEBUG)
@@ -82,9 +82,9 @@ def locations():
         logging.error(f"Error in /locations endpoint: {e}")
         return jsonify({"error": str(e)}), 500
 
-# Route to display drivers on map
-@app.route('/map', methods=['GET'])
-def map():
+# Serve the dashboard HTML file at the root URL
+@app.route('/', methods=['GET'])
+def index():
     return render_template('dashboard.html')
 
 if __name__ == "__main__":
