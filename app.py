@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS  # For handling CORS issues
 import logging
 import mysql.connector
 from db_config import get_connection
 
 app = Flask(__name__, template_folder='templates')
+CORS(app)  # Allow Cross-Origin requests
 
 # Enable logging
 logging.basicConfig(level=logging.DEBUG)
@@ -48,7 +50,8 @@ def location():
             INSERT INTO driver_location (driver_id, driver_name, driver_mobile, latitude, longitude, timestamp)
             VALUES (%s, %s, %s, %s, %s, NOW())
             ON DUPLICATE KEY UPDATE 
-            driver_name = VALUES(driver_name), driver_mobile = VALUES(driver_mobile), latitude = VALUES(latitude), longitude = VALUES(longitude), timestamp = NOW();
+            driver_name = VALUES(driver_name), driver_mobile = VALUES(driver_mobile), 
+            latitude = VALUES(latitude), longitude = VALUES(longitude), timestamp = NOW();
         """, (driver_id, driver_name, driver_mobile, latitude, longitude))
 
         connection.commit()
