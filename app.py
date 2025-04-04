@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import logging
 import mysql.connector
 from db_config import get_connection
@@ -81,6 +81,11 @@ def locations():
     except Exception as e:
         logging.error(f"Error in /locations endpoint: {e}")
         return jsonify({"error": str(e)}), 500
+
+# Route to display drivers on map
+@app.route('/map', methods=['GET'])
+def map():
+    return render_template('dashboard.html')
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
