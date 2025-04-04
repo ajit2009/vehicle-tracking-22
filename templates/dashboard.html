@@ -48,38 +48,36 @@
                     return;
                 }
 
-                // Remove old markers
-                for (const markerKey in markers) {
-                    if (markers.hasOwnProperty(markerKey)) {
-                        markers[markerKey].setMap(null);
-                        delete markers[markerKey];
-                    }
-                }
-
                 locations.forEach(location => {
                     const position = { lat: parseFloat(location.latitude), lng: parseFloat(location.longitude) };
+                    
+                    if (markers[location.driver_id]) {
+                        // Update existing marker position
+                        markers[location.driver_id].setPosition(position);
+                    } else {
+                        // Create new marker
+                        const marker = new google.maps.Marker({
+                            position: position,
+                            map: map,
+                            title: `Driver: ${location.driver_name}\nMobile: ${location.driver_mobile}`
+                        });
 
-                    const marker = new google.maps.Marker({
-                        position: position,
-                        map: map,
-                        title: `Driver: ${location.driver_name}\nMobile: ${location.driver_mobile}`
-                    });
+                        const infowindow = new google.maps.InfoWindow({
+                            content: `<div>
+                                <strong>Driver ID:</strong> ${location.driver_id}<br>
+                                <strong>Name:</strong> ${location.driver_name}<br>
+                                <strong>Mobile:</strong> ${location.driver_mobile}<br>
+                                <strong>Latitude:</strong> ${location.latitude}<br>
+                                <strong>Longitude:</strong> ${location.longitude}
+                            </div>`
+                        });
 
-                    const infowindow = new google.maps.InfoWindow({
-                        content: `<div>
-                                    <strong>Driver ID:</strong> ${location.driver_id}<br>
-                                    <strong>Name:</strong> ${location.driver_name}<br>
-                                    <strong>Mobile:</strong> ${location.driver_mobile}<br>
-                                    <strong>Latitude:</strong> ${location.latitude}<br>
-                                    <strong>Longitude:</strong> ${location.longitude}
-                                  </div>`
-                    });
+                        marker.addListener('click', () => {
+                            infowindow.open(map, marker);
+                        });
 
-                    marker.addListener('click', () => {
-                        infowindow.open(map, marker);
-                    });
-
-                    markers[location.driver_id] = marker; // Store marker with driver ID as key
+                        markers[location.driver_id] = marker;
+                    }
                 });
             });
         }
